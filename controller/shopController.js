@@ -7,7 +7,6 @@ const shopDetails = async (req, res) => {
     try {
 
         const { token } = req.headers;
-        console.log(token)
         let shopId = getShopIdFromToken(token);
 
         // Fetch the shop details by ID
@@ -59,7 +58,6 @@ const fetchAllShops = async (req, res) => {
 // GET /api/shop/:shopId
 const findShop = async (req, res) => {
     const { shopId } = req.params;
-    console.log("shopId", shopId)
 
     try {
         // Fetch the shop details by ID

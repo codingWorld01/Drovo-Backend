@@ -155,7 +155,6 @@ const shopPayment = async (req, res) => {
 const verifyPayment = async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    console.log('Request Body:', req.body);
     
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
         return res.status(400).json({ success: false, message: 'Missing payment details' });
@@ -168,9 +167,6 @@ const verifyPayment = async (req, res) => {
             .createHmac('sha256', keySecret)
             .update(`${razorpay_order_id}|${razorpay_payment_id}`)
             .digest('hex');
-
-        console.log('Generated Signature:', generatedSignature);
-        console.log('Razorpay Signature:', razorpay_signature);
 
         // Compare signatures
         if (generatedSignature !== razorpay_signature) {
@@ -198,6 +194,7 @@ const verifyPayment = async (req, res) => {
         subscriptionEndDate.setDate(subscriptionEndDate.getDate() + subscriptionDays);
 
         const updateData = {
+            name,
             shopAddress: {
                 address: address,
                 latitude: latitude,

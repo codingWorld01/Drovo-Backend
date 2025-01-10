@@ -7,7 +7,6 @@ const getShopIdFromToken = (token) => {
     try {
         if (!token) return null;
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(decoded);
         return decoded.id;
     } catch (error) {
         console.error("Error verifying token:", error);

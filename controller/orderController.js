@@ -142,6 +142,64 @@ const placeOrder = async (req, res) => {
     }
 };
 
+const findOrder = async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        const order = await orderModel.findById(id);
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+        
+
+        // Fetch the shop details
+        const shop = await Shop.findById(order.shopId);
+
+        res.status(200).json({
+            success: true,
+            order,
+            shop,
+        });
+    } catch (error) {
+        console.error("Error fetching order:", error);
+        res.status(500).json({ message: "Server error", error });
+    }
+};
+
+const feedback = async (req, res) => {
+    const { name, email, rating, message, shopEmail } = req.body;
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
+    });
+
+    const mailOptions = {
+        from: email,
+        to: shopEmail,
+        subject: `Feedback from ${name}`,
+        text: `
+            Name: ${name}
+            Email: ${email}
+            Rating: ${rating}
+            Message: ${message}
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        res.status(200).send({ message: 'Feedback sent successfully' });
+    } catch (error) {
+        console.error("Error sending email:", error);
+        res.status(500).send({ message: 'Failed to send feedback' });
+    }
+
+};
+
 // user orders for frontend
 const userOrders = async (req, res) => {
 
@@ -184,4 +242,4 @@ const updateStatus = async (req, res) => {
     }
 }
 
-export { placeOrder, userOrders, listOrders, updateStatus }
+export { placeOrder, userOrders, listOrders, updateStatus, findOrder, feedback }

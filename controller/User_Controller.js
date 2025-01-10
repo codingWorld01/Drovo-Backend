@@ -4,6 +4,10 @@ import bcrypt from 'bcrypt'
 import validator from 'validator'
 import nodemailer from 'nodemailer';
 import Shop from "../models/ShopModel.js";
+import { OAuth2Client } from 'google-auth-library'
+import e from "express";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper to create token
 const createToken = (id) => {
@@ -75,6 +79,42 @@ const loginUser = async (req, res) => {
     }
 }
 
+const googleRegister = async (req, res) => {
+    const { name, email, role } = req.body;
+
+    try {
+        let exists;
+        if (role === 'user') {
+            exists = await userModel.findOne({ email });
+        } else if (role === 'shop') {
+            exists = await Shop.findOne({ email });
+        } else {
+            return res.json({ success: false, message: "Invalid role" });
+        }
+
+        if (exists) {
+            return res.json({ success: false, message: `${role === 'shop' ? 'Shop' : 'User'} already exists` });
+        }
+        
+        // Create user or shop
+        let newUser;
+        if (role === 'user') {
+            newUser = new userModel({ name, email });
+        } else if (role === 'shop') {
+            newUser = new Shop({ email });
+        }
+
+        const user = await newUser.save();
+        const token = createToken(user._id);
+
+        res.json({ success: true, token, isNewUser: true });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Error" });
+    }
+};
+
+
 // Register user or shop
 const registerUser = async (req, res) => {
 
@@ -123,6 +163,65 @@ const registerUser = async (req, res) => {
         res.json({ success: false, message: "Error" });
     }
 }
+
+const verifyGoogleToken = async (token) => {
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID, // Client ID from Google Console
+        });
+        const payload = ticket.getPayload();
+        return payload; // Contains user info (email, name, etc.)
+    } catch (error) {
+        console.error('Error verifying Google token:', error);
+        return null;
+    }
+};
+
+
+const googleLogin = async (req, res) => {
+    const { token, userType } = req.body;
+
+    try {
+        // Use the Google token to get user details
+        const googleUserData = await verifyGoogleToken(token); // Your Google token verification logic
+
+        const { email } = googleUserData;
+        let user;
+
+        // Check if the user exists as a user or a shop
+        if (userType == "shop")
+            user = await Shop.findOne({ email }); // Find shop in the shop model
+        else 
+            user = await userModel.findOne({ email }); // Find user in the user model
+        
+
+        if (user) {
+            // Generate JWT token
+            const jwtToken = createToken(user._id);
+
+            // Send response back with user type and token
+            return res.json({
+                success: true,
+                token: jwtToken,
+                isNewUser: false,  // Existing user, no need to perform signup
+            });
+        } else {
+            return res.status(200).json({
+                success: true,
+                message: 'Account not Found! Please Signup.',
+                isNewUser: true, // New user, need to perform signup
+            });
+        }
+    } catch (error) {
+        console.error("Google Login Error:", error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error during Google login.',
+        });
+    }
+};
+
 
 const otpStore = {};
 
@@ -274,4 +373,4 @@ const verifyOtp = async (req, res) => {
 
 
 
-export { loginUser, registerUser, getUserProfile, sendOtp, verifyOtp };
+export { loginUser, registerUser, getUserProfile, sendOtp, verifyOtp, googleLogin, googleRegister };

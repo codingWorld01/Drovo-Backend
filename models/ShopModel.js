@@ -3,7 +3,7 @@ import mongoose from "mongoose"
 const ShopSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        // required: true
     },
     email: {
         type: String,
@@ -12,7 +12,7 @@ const ShopSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        // required: true
     },
     shopAddress: {
         address: { type: String },
