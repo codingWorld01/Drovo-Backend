@@ -3,8 +3,6 @@ import userModel from "../models/UserModel.js"
 import jwt from 'jsonwebtoken'
 import Shop from "../models/ShopModel.js"; // Import the Shop Model
 import nodemailer from 'nodemailer';
-import axios from 'axios';
-
 
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
@@ -20,12 +18,8 @@ const getShopIdFromToken = (token) => {
 };
 
 
-
-// placing user order for frontend
-
 const placeOrder = async (req, res) => {
     try {
-
         // Step 1: Create and save the new order
         const newOrder = new orderModel({
             userId: req.body.userId,
@@ -47,7 +41,7 @@ const placeOrder = async (req, res) => {
             return res.status(404).json({ success: false, message: "Shop not found." });
         }
 
-        const { name, email, phone } = shopDetails; // Assuming shop has admin email
+        const { name, email, phone } = shopDetails; // Assuming shop has admin phone number
 
         // Step 4: Send Email Notification to Shopkeeper using NodeMailer
         const transporter = nodemailer.createTransport({
@@ -73,74 +67,16 @@ const placeOrder = async (req, res) => {
             }
         });
 
-        // console.log(process.env.MSG91_API_KEY);
-        // Step 5: Send WhatsApp Notification using MSG91 Outbound Message API
-        // const msg91ApiKey = process.env.MSG91_API_KEY;
-        // const whatsappEndpoint = "https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/";
-
-        // const payload = {
-        //     "integrated_number": "918262088341",
-        //     "content_type": "template",
-        //     "payload": {
-        //         "messaging_product": "whatsapp",
-        //         "type": "template",
-        //         "template": {
-        //             "name": "drovo",
-        //             "language": {
-        //                 "code": "en_GB",
-        //                 "policy": "deterministic"
-        //             },
-        //             "namespace": "91a02504_30c0_469d_8b0f_f60e43fc0546",
-        //             "to_and_components": [
-        //                 {
-        //                     "to": [
-        //                         "8600777024"
-        //                     ],
-        //                     "components": {
-        //                         "body_1": {
-        //                             "type": "text",
-        //                             "value": name
-        //                         },
-        //                         "body_2": {
-        //                             "type": "text",
-        //                             "value": req.body.amount
-        //                         },
-        //                         "body_3": {
-        //                             "type": "text",
-        //                             "value": req.body.address.street
-        //                         }
-        //                     }
-        //                 }
-        //             ]
-        //         }
-        //     }
-        // };
-
-        // Hello,  
-        // A new order has been placed at your shop!  
-
-        // Please check your admin panel for more details.  
-        // Thank you for using our service!
-
-        // const headers = {
-        //     "Content-Type": "application/json",
-        //     authkey: msg91ApiKey,
-        // };
-
-        // try {
-        //     const response = await axios.post(whatsappEndpoint, payload, { headers });
-        //     console.log("WhatsApp notification sent successfully!", response.data);
-        // } catch (error) {
-        //     console.error("Error sending WhatsApp notification:", error.response?.data || error.message);
-        // }
-
-        // Step 6: Respond to the frontend
+       
+        // Step 5: Respond to the frontend
         res.status(200).json({ success: true, message: "Order placed successfully and notifications sent!" });
     } catch (error) {
         console.error("Error placing order:", error);
         res.status(500).json({ success: false, message: "Error placing order." });
     }
 };
+
+
 
 const findOrder = async (req, res) => {
     const { id } = req.params;

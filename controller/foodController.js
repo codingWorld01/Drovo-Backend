@@ -16,9 +16,8 @@ const getShopIdFromToken = (token) => {
 
 
 //add food items
-
 const addFood = async (req, res) => {
-    const { name, description, price, category, quantity, unit } = req.body;  // Get shopId from request body
+    const { name, description, price, category, quantity, unit } = req.body;
     const { token } = req.headers;
 
     let shopId = getShopIdFromToken(token);
@@ -26,9 +25,10 @@ const addFood = async (req, res) => {
         return res.status(400).json({ success: false, message: "Shop ID is required" });
     }
 
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "Image is required." });
+    }
 
-
-    let image_filename = `${req.file.filename}`;
     const food = new foodModel({
         name,
         description,
@@ -36,8 +36,8 @@ const addFood = async (req, res) => {
         category,
         quantity,
         unit,
-        image: image_filename,
-        shop: shopId  // Associate food item with the shop
+        image: req.file.filename, // Save compressed filename
+        shop: shopId, // Associate food item with the shop
     });
 
     try {
@@ -45,7 +45,51 @@ const addFood = async (req, res) => {
         res.json({ success: true, message: "Food Added" });
     } catch (error) {
         console.log(error);
-        res.json({ success: false, message: "Something Went Wrong, Please try again!" });
+        res.status(500).json({ success: false, message: "Something Went Wrong, Please try again!" });
+    }
+};
+
+const editFood = async (req, res) => {
+    const { id } = req.params; // Food ID
+    const { name, description, price, category, unit, quantity } = req.body;
+
+    try {
+        // Find the food item by ID
+        const foodItem = await foodModel.findById(id);
+        if (!foodItem) {
+            return res.status(404).json({ success: false, message: "Food item not found." });
+        }
+
+        if (req.file) {
+            const oldImagePath = `uploads/${foodItem.image}`;
+        
+            fs.unlink(oldImagePath, (error) => {
+                if (error) {
+                    console.warn("Failed to delete old image:", error.message);
+                } else {
+                    console.log("Old image deleted:", oldImagePath);
+                }
+            });
+        
+            // Update the food item with the new image
+            foodItem.image = req.file.filename;
+        }
+
+        // Update the rest of the fields
+        foodItem.name = name || foodItem.name;
+        foodItem.description = description || foodItem.description;
+        foodItem.price = price || foodItem.price;
+        foodItem.category = category || foodItem.category;
+        foodItem.unit = unit || foodItem.unit;
+        foodItem.quantity = quantity || foodItem.quantity;
+
+        // Save the updated food item
+        await foodItem.save();
+
+        return res.status(200).json({ success: true, message: "Food item updated successfully.", data: foodItem });
+    } catch (error) {
+        console.error("Error updating food item:", error);
+        return res.status(500).json({ success: false, message: "Error updating food item." });
     }
 };
 
@@ -79,6 +123,22 @@ const listFood = async (req, res) => {
     }
 };
 
+const giveFood = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const food = await foodModel.findById(id);
+
+        if (!food) {
+            return res.status(404).json({ success: false, message: "Food item not found" });
+        }
+
+        res.json({ success: true, data: food });
+    } catch (error) {
+        console.error("Error fetching food details:", error.message);
+        res.status(500).json({ success: false, message: "Error fetching food details" });
+    }
+};
 
 
 //remove food item
@@ -113,5 +173,5 @@ const removeFood = async (req, res) => {
 };
 
 
-export { addFood, listFood, removeFood, getShopIdFromToken }
+export { addFood, listFood, removeFood, getShopIdFromToken, giveFood, editFood }
 

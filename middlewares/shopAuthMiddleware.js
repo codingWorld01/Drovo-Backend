@@ -4,6 +4,7 @@ import Shop from '../models/ShopModel.js';
 // Middleware to protect shop routes
 const shopAuthMiddleware = async (req, res, next) => {
     const { token } = req.headers;
+    // console.log(req)
 
     if (!token) {
         return res.status(401).json({ success: false, message: "No token provided" });
