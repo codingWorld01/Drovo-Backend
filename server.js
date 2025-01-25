@@ -12,10 +12,12 @@ import paymentRouter from "./routes/paymentRouter.js"
 // app config
 const app = express()
 const PORT = process.env.PORT || 4000
-
+const corsOptions = {
+  origin: "*", // Allow all origins
+};
 //middleware
 app.use(express.json())
-app.use(cors())
+app.use(cors(corsOptions))
 
 //db Connection
 connectDB();
